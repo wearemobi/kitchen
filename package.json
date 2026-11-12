@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "lint": "tsc -b",
     "preview": "vite preview",
+    "pages:dev": "wrangler pages dev dist",
+    "pages:deploy": "wrangler pages deploy dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "api:gen": "openapi-typescript ../wared/api/openapi.yaml -o src/lib/schema.d.ts"
@@ -33,6 +35,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.3",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.160.1"
   }
 }
