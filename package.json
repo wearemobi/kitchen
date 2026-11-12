@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "pages:dev": "wrangler pages dev dist",
     "pages:deploy": "wrangler pages deploy dist",
+    "deploy": "pnpm run build && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "api:gen": "openapi-typescript ../wared/api/openapi.yaml -o src/lib/schema.d.ts"
