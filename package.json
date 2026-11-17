@@ -1,0 +1,22 @@
+{
+  "name": "kitchen-monorepo",
+  "private": true,
+  "description": "M.O.B.I.™ Kitchen & Sala Satellite Apps Monorepo (KDS, Comanda & Common) — SPEC-WSAT3",
+  "author": "M.O.B.I.™",
+  "type": "module",
+  "scripts": {
+    "dev:kds": "pnpm --filter @kitchen/kds dev",
+    "dev:comanda": "pnpm --filter @kitchen/comanda dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r run typecheck",
+    "deploy:kds": "pnpm --filter @kitchen/kds run deploy",
+    "deploy:comanda": "pnpm --filter @kitchen/comanda run deploy",
+    "deploy:all": "pnpm --filter \"./apps/*\" run deploy",
+    "api:gen": "openapi-typescript ../wared/api/openapi.yaml -o packages/common/src/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

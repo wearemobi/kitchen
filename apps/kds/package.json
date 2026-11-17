@@ -1,5 +1,5 @@
 {
-  "name": "ware-kds",
+  "name": "@kitchen/kds",
   "private": true,
   "version": "0.1.0",
   "description": "M.O.B.I.™ Kitchen Display System — mini-app táctil para estaciones de cocina (SPEC-WKDS1)",
@@ -14,10 +14,10 @@
     "pages:deploy": "wrangler pages deploy dist",
     "deploy": "pnpm run build && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "api:gen": "openapi-typescript ../wared/api/openapi.yaml -o src/lib/schema.d.ts"
+    "test": "vitest run"
   },
   "dependencies": {
+    "@kitchen/common": "workspace:*",
     "openapi-fetch": "^0.13.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

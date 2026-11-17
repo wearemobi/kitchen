@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, Test & Build
+    name: Lint, Test & Build Monorepo
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +22,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 12
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
-      - name: Build production bundle
+      - name: Build production bundles
         run: pnpm run build
         env:
           VITE_API_BASE_URL: https://api.mobiware.app
