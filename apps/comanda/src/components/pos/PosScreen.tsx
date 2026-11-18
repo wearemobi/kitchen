@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchProducts, createOrder, resolveBusinessId, type Product } from "../../lib/api";
+import {
+  fetchProducts,
+  createOrder,
+  dispatchOrderToKitchen,
+  resolveBusinessId,
+  type Product,
+} from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
 import { playSuccess } from "../../lib/sounds";
 import Navbar from "./Navbar";
@@ -68,6 +74,9 @@ export default function PosScreen() {
           notes: i.notes || undefined,
         })),
       });
+      if (order?.id) {
+        await dispatchOrderToKitchen(order.id, businessId);
+      }
       clear();
       setCartOpen(false);
       playSuccess();

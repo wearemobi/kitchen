@@ -112,3 +112,13 @@ export async function listOpenOrders(): Promise<
   }
   return data;
 }
+
+export async function dispatchOrderToKitchen(orderId: string, businessId: string): Promise<void> {
+  const { error } = await api.POST("/v1/kitchen/tickets", {
+    params: { header: { "X-Tenant-Id": resolveTenantId() } },
+    body: { order_id: orderId, business_id: businessId },
+  });
+  if (error) {
+    throw new Error("Orden creada, pero no fue posible despacharla a las estaciones de cocina.");
+  }
+}
