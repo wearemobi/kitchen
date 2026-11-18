@@ -10,9 +10,21 @@ export type Cashier = NonNullable<
 export type PinLoginResponse =
   paths["/v1/auth/login-pin"]["post"]["responses"]["200"]["content"]["application/json"];
 
+const LOGIN_PIN_PATH = "/v1/auth/login-pin";
+
+/** True when the request targets the PIN login endpoint itself. */
+function isPinLoginRequest(url: string): boolean {
+  try {
+    return new URL(url).pathname === LOGIN_PIN_PATH;
+  } catch {
+    return url.split("?")[0].endsWith(LOGIN_PIN_PATH);
+  }
+}
+
 export function createApiClient(options: {
   resolveTenantId: () => string;
   getToken: () => string | null;
+  onUnauthorized?: () => void;
   baseUrl?: string;
 }) {
   const envBaseUrl = (
@@ -26,6 +38,8 @@ export function createApiClient(options: {
     fetch: (input: Request) => globalThis.fetch(input),
   });
 
+  let lastRejectedToken: string | null = null;
+
   client.use({
     onRequest({ request }) {
       const tenantId = options.resolveTenantId();
@@ -37,6 +51,25 @@ export function createApiClient(options: {
         request.headers.set("Authorization", `Bearer ${token}`);
       }
       return request;
+    },
+    onResponse({ request, response }) {
+      if (response.status !== 401) {
+        return response;
+      }
+      // A rejected PIN must surface as "PIN incorrecto", not as a session
+      // expiry: the login screen intentionally holds no token.
+      if (isPinLoginRequest(request.url)) {
+        return response;
+      }
+      const token = options.getToken();
+      if (!token || token === lastRejectedToken) {
+        return response;
+      }
+      // Several requests may be in flight when the session dies; notify once
+      // per token so polling cannot trigger repeated logout cascades.
+      lastRejectedToken = token;
+      options.onUnauthorized?.();
+      return response;
     },
   });
 

@@ -119,4 +119,22 @@ describe("KdsScreen", () => {
     render(<KdsScreen />);
     expect(await screen.findByRole("alert")).toHaveTextContent("reintentando automáticamente");
   });
+
+  it("no muestra el aviso de reintento y detiene el polling cuando el 401 limpió la sesión", async () => {
+    vi.mocked(fetchBoard).mockImplementation(async () => {
+      // El interceptor `onUnauthorized` deja el store vacío antes de que el
+      // error llegue al componente (kitchen#1).
+      useAuthStore.getState().logout();
+      throw new Error("No fue posible cargar el tablero de cocina.");
+    });
+
+    render(<KdsScreen pollIntervalMs={25} />);
+
+    await waitFor(() => expect(useAuthStore.getState().token).toBe(""));
+    const callsAfterLogout = vi.mocked(fetchBoard).mock.calls.length;
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(vi.mocked(fetchBoard).mock.calls.length).toBe(callsAfterLogout);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });
