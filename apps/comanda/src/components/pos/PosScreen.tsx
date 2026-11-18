@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchProducts, createOrder, type Product } from "../../lib/api";
+import { fetchProducts, createOrder, resolveBusinessId, type Product } from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
 import { playSuccess } from "../../lib/sounds";
 import Navbar from "./Navbar";
 import ProductGrid from "./ProductGrid";
 import Cart from "./Cart";
 import OpenOrdersDialog from "./OpenOrdersDialog";
-
-const BUSINESS_ID = (import.meta.env.VITE_BUSINESS_ID as string | undefined) ?? "";
 
 export default function PosScreen() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -55,8 +53,9 @@ export default function PosScreen() {
     setSending(true);
     setSendError("");
     try {
+      const businessId = await resolveBusinessId();
       const order = await createOrder({
-        business_id: BUSINESS_ID,
+        business_id: businessId,
         request_id: crypto.randomUUID(),
         order_type: channel === "DINE_IN" ? "DINE_IN" : channel === "TAKEAWAY" ? "TAKEAWAY" : "DELIVERY",
         source_channel: "POS",

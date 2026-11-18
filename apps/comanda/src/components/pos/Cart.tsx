@@ -28,7 +28,7 @@ export default function Cart({ onClose, onSend, sending, sendError }: CartProps)
 
   const [noteDraft, setNoteDraft] = useState<Record<string, string>>({});
 
-  const total = items.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0);
+  const total = items.reduce((acc, i) => acc + Math.round((i.quantity * i.unitPrice) / 10000), 0);
 
   return (
     <div className="fixed inset-0 z-40 flex items-end bg-black/60" onClick={onClose}>

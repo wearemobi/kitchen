@@ -51,6 +51,38 @@ export async function fetchProducts(): Promise<Product[]> {
   return data.items ?? [];
 }
 
+const businessIdCache = new Map<string, string>();
+
+export async function resolveBusinessId(): Promise<string> {
+  const envBusinessId = (import.meta.env.VITE_BUSINESS_ID as string | undefined)?.trim();
+  if (envBusinessId) {
+    return envBusinessId;
+  }
+
+  const tenantId = resolveTenantId();
+  const cached = businessIdCache.get(tenantId);
+  if (cached) {
+    return cached;
+  }
+
+  const { data, error } = await (
+    api as unknown as {
+      GET: (
+        url: string,
+        opts: { params: { header: { "X-Tenant-Id": string } } },
+      ) => Promise<{ data?: Array<{ id?: string }>; error?: unknown }>;
+    }
+  ).GET("/v1/orders/businesses", {
+    params: { header: { "X-Tenant-Id": tenantId } },
+  });
+  if (error || !Array.isArray(data) || data.length === 0 || !data[0]?.id) {
+    throw new Error("No se encontró un negocio configurado para este tenant.");
+  }
+
+  businessIdCache.set(tenantId, data[0].id);
+  return data[0].id;
+}
+
 export async function createOrder(payload: {
   business_id: string;
   request_id: string;
