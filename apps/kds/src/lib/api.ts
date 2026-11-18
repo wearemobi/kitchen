@@ -21,6 +21,7 @@ export const API_BASE_URL =
 export const api = createApiClient({
   resolveTenantId,
   getToken: () => useAuthStore.getState().token,
+  onUnauthorized: () => useAuthStore.getState().logout(),
   baseUrl: API_BASE_URL,
 });
 

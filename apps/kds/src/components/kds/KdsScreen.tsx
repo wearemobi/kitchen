@@ -25,6 +25,7 @@ interface KdsScreenProps {
 }
 
 export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScreenProps) {
+  const token = useAuthStore((s) => s.token);
   const operatorName = useAuthStore((s) => s.operatorName);
   const operatorId = useAuthStore((s) => s.operatorId);
   const logout = useAuthStore((s) => s.logout);
@@ -44,6 +45,9 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
   });
 
   const refresh = useCallback(async () => {
+    // kitchen#1: after a 401 the shared interceptor clears the session; never
+    // fire another polling request with the dead token.
+    if (!useAuthStore.getState().token) return;
     try {
       const next = await fetchBoard();
       const stations = next.stations ?? [];
@@ -64,15 +68,19 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
       });
       setError("");
     } catch (err) {
+      // The 401 interceptor already logged the operator out; surfacing
+      // "reintentando automáticamente" here would trap them in a dead board.
+      if (!useAuthStore.getState().token) return;
       setError(err instanceof Error ? err.message : "Error de conexión con wared.");
     }
   }, []);
 
   useEffect(() => {
+    if (!token) return;
     void refresh();
     const interval = window.setInterval(() => void refresh(), pollIntervalMs);
     return () => window.clearInterval(interval);
-  }, [refresh, pollIntervalMs]);
+  }, [refresh, pollIntervalMs, token]);
 
   useEffect(() => {
     window.localStorage.setItem("ware-kds.columns", String(columns));
