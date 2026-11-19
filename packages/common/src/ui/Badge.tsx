@@ -13,9 +13,9 @@ export const badgeVariants = cva(
         accent:
           "border-transparent bg-accent-brand-soft text-accent-brand font-semibold",
         amber:
-          "border-transparent bg-amber-500/15 text-amber-400 font-semibold",
+          "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400 font-semibold",
         emerald:
-          "border-transparent bg-emerald-500/15 text-emerald-400 font-semibold",
+          "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold",
         destructive:
           "border-transparent bg-destructive/15 text-destructive font-semibold",
       },

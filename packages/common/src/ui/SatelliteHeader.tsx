@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Moon, Sun, User } from "lucide-react";
 import { cn } from "./cn";
 import { Badge } from "./Badge";
 import { Button } from "./Button";
+import type { SatelliteTheme } from "./theme";
 
 export interface SatelliteMetric {
   label: string;
@@ -19,6 +20,8 @@ export interface SatelliteHeaderProps {
   operatorName?: string;
   controls?: ReactNode;
   actions?: ReactNode;
+  theme?: SatelliteTheme;
+  onToggleTheme?: () => void;
   onLogout?: () => void;
   bottomSlot?: ReactNode;
   className?: string;
@@ -33,6 +36,8 @@ export function SatelliteHeader({
   operatorName,
   controls,
   actions,
+  theme,
+  onToggleTheme,
   onLogout,
   bottomSlot,
   className,
@@ -90,6 +95,27 @@ export function SatelliteHeader({
 
           {controls}
           {actions}
+
+          {onToggleTheme && theme && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={onToggleTheme}
+              aria-label={
+                theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"
+              }
+              title={
+                theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"
+              }
+              className="h-7 w-7 px-0 text-muted-foreground hover:text-foreground"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <Moon className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </Button>
+          )}
 
           {onLogout && (
             <Button

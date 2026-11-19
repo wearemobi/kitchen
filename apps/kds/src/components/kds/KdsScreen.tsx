@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChefHat, History, LayoutGrid } from "lucide-react";
-import { Badge, Button, SatelliteHeader, cn } from "@kitchen/common";
+import { Badge, Button, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
 import { fetchBoard, fireTransition, resolveTenantId, type BoardResponse, type Station, type Ticket, type TicketTransition } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 import { consolidateItems, detectNewTicketIds } from "../../lib/board";
@@ -24,9 +24,15 @@ const FONT_ZOOM: Record<FontScale, number> = { sm: 0.9, base: 1, lg: 1.15 };
 
 interface KdsScreenProps {
   pollIntervalMs?: number;
+  theme?: SatelliteTheme;
+  onToggleTheme?: () => void;
 }
 
-export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScreenProps) {
+export default function KdsScreen({
+  pollIntervalMs = POLL_INTERVAL_MS,
+  theme,
+  onToggleTheme,
+}: KdsScreenProps) {
   const token = useAuthStore((s) => s.token);
   const operatorName = useAuthStore((s) => s.operatorName);
   const operatorId = useAuthStore((s) => s.operatorId);
@@ -137,12 +143,12 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
           {
             label: "Pendientes",
             value: board?.stats?.pending_tickets ?? 0,
-            valueClassName: "text-amber-400",
+            valueClassName: "text-amber-600 dark:text-amber-400",
           },
           {
             label: "En prep",
             value: board?.stats?.in_progress_tickets ?? 0,
-            valueClassName: "text-emerald-400",
+            valueClassName: "text-emerald-600 dark:text-emerald-400",
           },
           {
             label: "Prom",
@@ -207,6 +213,8 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
             </Button>
           ) : undefined
         }
+        theme={theme}
+        onToggleTheme={onToggleTheme}
         onLogout={logout}
       />
 

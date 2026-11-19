@@ -36,3 +36,9 @@ export { Card, CardHeader, CardContent, CardFooter } from "./ui/Card";
 export { Input } from "./ui/Input";
 export { SatelliteHeader } from "./ui/SatelliteHeader";
 export type { SatelliteHeaderProps, SatelliteMetric } from "./ui/SatelliteHeader";
+export {
+  resolveSatelliteTheme,
+  applySatelliteTheme,
+  useSatelliteTheme,
+} from "./ui/theme";
+export type { SatelliteTheme } from "./ui/theme";

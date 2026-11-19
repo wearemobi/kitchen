@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShoppingBag } from "lucide-react";
-import { Button } from "@kitchen/common";
+import { Button, type SatelliteTheme } from "@kitchen/common";
 import {
   fetchProducts,
   createOrder,
@@ -15,7 +15,12 @@ import ProductGrid from "./ProductGrid";
 import Cart from "./Cart";
 import OpenOrdersDialog from "./OpenOrdersDialog";
 
-export default function PosScreen() {
+interface PosScreenProps {
+  theme?: SatelliteTheme;
+  onToggleTheme?: () => void;
+}
+
+export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,6 +124,8 @@ export default function PosScreen() {
         onColumnsChange={setColumns}
         fontScale={fontScale}
         onFontScaleChange={setFontScale}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
       />
       <main
         className="flex-1 overflow-y-auto p-3"
