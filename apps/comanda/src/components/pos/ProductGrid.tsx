@@ -2,11 +2,19 @@ import { useCartStore } from "../../store/cart.store";
 import { playAdd } from "../../lib/sounds";
 import type { Product } from "../../lib/api";
 
+const COLUMN_CLASSES: Record<2 | 3 | 4 | 6, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-2 sm:grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+  6: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6",
+};
+
 interface ProductGridProps {
   products: Product[];
+  columns?: 2 | 3 | 4 | 6;
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
+export default function ProductGrid({ products, columns = 3 }: ProductGridProps) {
   const addItem = useCartStore((s) => s.addItem);
 
   function money(value: number | undefined): string {
@@ -15,7 +23,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <ul className={`grid gap-3 ${COLUMN_CLASSES[columns]}`}>
       {products.map((product) => (
         <li key={product.sku}>
           <button
@@ -28,11 +36,11 @@ export default function ProductGrid({ products }: ProductGridProps) {
               });
               playAdd();
             }}
-            className="flex h-full w-full flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-left transition-colors hover:border-emerald-500 active:scale-[0.98]"
+            className="flex h-full w-full flex-col justify-between rounded-2xl border border-border bg-card p-3 text-left text-card-foreground shadow-xs transition-colors hover:border-accent-brand active:scale-[0.98]"
           >
             <span className="text-sm font-semibold leading-tight">{product.name}</span>
-            <span className="mt-2 text-xs text-zinc-400">{product.sku}</span>
-            <span className="mt-3 text-base font-bold text-emerald-400">${money(product.base_price)}</span>
+            <span className="mt-2 font-mono text-xs text-muted-foreground">{product.sku}</span>
+            <span className="mt-3 text-base font-bold text-accent-brand">${money(product.base_price)}</span>
           </button>
         </li>
       ))}

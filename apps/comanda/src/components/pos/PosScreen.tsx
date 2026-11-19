@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { ShoppingBag } from "lucide-react";
+import { Button } from "@kitchen/common";
 import {
   fetchProducts,
   createOrder,
@@ -8,7 +10,7 @@ import {
 } from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
 import { playSuccess } from "../../lib/sounds";
-import Navbar from "./Navbar";
+import Navbar, { type ComandaColumnCount, type ComandaFontScale } from "./Navbar";
 import ProductGrid from "./ProductGrid";
 import Cart from "./Cart";
 import OpenOrdersDialog from "./OpenOrdersDialog";
@@ -23,6 +25,22 @@ export default function PosScreen() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [columns, setColumns] = useState<ComandaColumnCount>(() => {
+    const saved = Number(window.localStorage.getItem("ware-comanda.columns"));
+    return ([2, 3, 4, 6] as number[]).includes(saved) ? (saved as ComandaColumnCount) : 3;
+  });
+  const [fontScale, setFontScale] = useState<ComandaFontScale>(() => {
+    const saved = window.localStorage.getItem("ware-comanda.fontScale");
+    return saved === "sm" || saved === "lg" ? saved : "base";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("ware-comanda.columns", String(columns));
+  }, [columns]);
+
+  useEffect(() => {
+    window.localStorage.setItem("ware-comanda.fontScale", fontScale);
+  }, [fontScale]);
 
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
@@ -90,31 +108,41 @@ export default function PosScreen() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background text-foreground">
       <Navbar
         search={search}
         onSearch={setSearch}
         onOpenOrders={() => setOrdersOpen(true)}
         table={table}
+        cartCount={items.length}
+        columns={columns}
+        onColumnsChange={setColumns}
+        fontScale={fontScale}
+        onFontScaleChange={setFontScale}
       />
-      <main className="flex-1 overflow-y-auto p-3">
-        {loading && <p className="animate-pulse text-sm text-zinc-400">Cargando catálogo…</p>}
+      <main
+        className="flex-1 overflow-y-auto p-3"
+        style={{ zoom: fontScale === "sm" ? 0.9 : fontScale === "lg" ? 1.12 : 1 }}
+      >
+        {loading && <p className="animate-pulse text-sm text-muted-foreground">Cargando catálogo…</p>}
         {error && (
-          <p role="alert" className="rounded-lg bg-red-950 px-4 py-2 text-sm text-red-300">
+          <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/15 px-4 py-2 text-sm text-destructive">
             {error}
           </p>
         )}
-        {!loading && !error && <ProductGrid products={filtered} />}
+        {!loading && !error && <ProductGrid products={filtered} columns={columns} />}
       </main>
 
       {items.length > 0 && (
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          size="lg"
           onClick={() => setCartOpen(true)}
-          className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-zinc-950 shadow-lg"
+          className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-full px-6 shadow-lg"
         >
-          Ver carrito ({items.length})
-        </button>
+          <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+          <span>Ver carrito ({items.length})</span>
+        </Button>
       )}
 
       {cartOpen && (

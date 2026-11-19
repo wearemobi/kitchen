@@ -25,3 +25,14 @@ export {
 // Utilities
 export { initials } from "./utils/initials";
 export { formatMoney } from "./utils/format";
+
+// Shared shadcn-style UI (Option A)
+export { cn } from "./ui/cn";
+export { Button, buttonVariants } from "./ui/Button";
+export type { ButtonProps } from "./ui/Button";
+export { Badge, badgeVariants } from "./ui/Badge";
+export type { BadgeProps } from "./ui/Badge";
+export { Card, CardHeader, CardContent, CardFooter } from "./ui/Card";
+export { Input } from "./ui/Input";
+export { SatelliteHeader } from "./ui/SatelliteHeader";
+export type { SatelliteHeaderProps, SatelliteMetric } from "./ui/SatelliteHeader";

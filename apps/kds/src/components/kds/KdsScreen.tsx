@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, ChefHat, History, LayoutGrid } from "lucide-react";
+import { Badge, Button, SatelliteHeader, cn } from "@kitchen/common";
 import { fetchBoard, fireTransition, resolveTenantId, type BoardResponse, type Station, type Ticket, type TicketTransition } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 import { consolidateItems, detectNewTicketIds } from "../../lib/board";
@@ -95,7 +97,7 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
   const allStation: Station = {
     id: "__all__",
     name: "Todas",
-    icon: "📋",
+    icon: "",
     view_type: "queue",
     tickets: stations.flatMap((s) => s.tickets ?? []),
   } as Station;
@@ -126,89 +128,119 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900 px-4 py-3">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-lg font-black tracking-tight">MobiWare KDS</h1>
-          <span className="text-xs text-zinc-500">{resolveTenantId()}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          <span className="rounded-lg bg-zinc-800 px-2 py-1">
-            Pendientes: <strong className="text-amber-400">{board?.stats?.pending_tickets ?? 0}</strong>
-          </span>
-          <span className="rounded-lg bg-zinc-800 px-2 py-1">
-            En prep: <strong className="text-emerald-400">{board?.stats?.in_progress_tickets ?? 0}</strong>
-          </span>
-          <span className="rounded-lg bg-zinc-800 px-2 py-1">
-            Prom: <strong>{(board?.stats?.avg_prep_time_minutes ?? 0).toFixed(1)}m</strong>
-          </span>
-          <span className="ml-2 rounded-lg bg-amber-500/15 px-2 py-1 font-semibold text-amber-400">{operatorName}</span>
-          <div className="ml-2 flex items-center gap-1 rounded-lg bg-zinc-800 p-1 text-xs">
-            {([2, 3, 4, 6] as ColumnCount[]).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setColumns(n)}
-                aria-pressed={columns === n}
-                className={`rounded-md px-2 py-1 font-bold ${columns === n ? "bg-amber-500 text-zinc-950" : "text-zinc-300 hover:bg-zinc-700"}`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 rounded-lg bg-zinc-800 p-1 text-xs">
-            {(["sm", "base", "lg"] as FontScale[]).map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setFontScale(size)}
-                aria-pressed={fontScale === size}
-                className={`rounded-md px-2 py-1 font-bold ${fontScale === size ? "bg-amber-500 text-zinc-950" : "text-zinc-300 hover:bg-zinc-700"}`}
-              >
-                {size === "sm" ? "A-" : size === "lg" ? "A+" : "A"}
-              </button>
-            ))}
-          </div>
-          {completedCount > 0 && (
-            <button
-              type="button"
+    <div className="flex h-full flex-col bg-background text-foreground">
+      <SatelliteHeader
+        title="MobiWare KDS"
+        tenantId={resolveTenantId()}
+        icon={<ChefHat className="h-4 w-4" aria-hidden="true" />}
+        metrics={[
+          {
+            label: "Pendientes",
+            value: board?.stats?.pending_tickets ?? 0,
+            valueClassName: "text-amber-400",
+          },
+          {
+            label: "En prep",
+            value: board?.stats?.in_progress_tickets ?? 0,
+            valueClassName: "text-emerald-400",
+          },
+          {
+            label: "Prom",
+            value: `${(board?.stats?.avg_prep_time_minutes ?? 0).toFixed(1)}m`,
+          },
+        ]}
+        operatorName={operatorName}
+        controls={
+          <>
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+              {([2, 3, 4, 6] as ColumnCount[]).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setColumns(n)}
+                  aria-pressed={columns === n}
+                  className={cn(
+                    "rounded-md px-2 py-1 font-bold transition-colors",
+                    columns === n
+                      ? "bg-accent-brand text-accent-brand-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+              {(["sm", "base", "lg"] as FontScale[]).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => setFontScale(size)}
+                  aria-pressed={fontScale === size}
+                  className={cn(
+                    "rounded-md px-2 py-1 font-bold transition-colors",
+                    fontScale === size
+                      ? "bg-accent-brand text-accent-brand-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {size === "sm" ? "A-" : size === "lg" ? "A+" : "A"}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+        actions={
+          completedCount > 0 ? (
+            <Button
+              variant={showCompleted ? "secondary" : "outline"}
+              size="xs"
+              aria-pressed={showCompleted}
+              title={showCompleted ? "Ocultar órdenes completadas" : "Ver órdenes completadas"}
               onClick={() => setShowCompleted((v) => !v)}
-              className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-400 hover:bg-zinc-800"
+              className="h-7 text-muted-foreground hover:text-foreground"
             >
-              {showCompleted
-                ? "Ocultar historial / Ocultar completadas"
-                : `Historial (${completedCount}) / Ver completadas`}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-400 hover:bg-zinc-800"
-          >
-            Salir
-          </button>
-        </div>
-      </header>
+              <History className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>
+                {showCompleted ? "Ocultar" : `Historial (${completedCount})`}
+              </span>
+            </Button>
+          ) : undefined
+        }
+        onLogout={logout}
+      />
 
       {stations.length > 0 && (
-        <nav aria-label="Estaciones de cocina" className="flex gap-2 overflow-x-auto border-b border-zinc-800 bg-zinc-950 px-4 py-2">
+        <nav aria-label="Estaciones de cocina" className="flex gap-2 overflow-x-auto border-b border-border bg-card/60 px-4 py-2">
           {navStations.map((station) => {
             const count = (station.tickets ?? []).filter((t) => t.status === "PENDING").length;
+            const active = station.id === activeStationId;
             return (
               <button
                 key={station.id}
                 type="button"
                 onClick={() => setActiveStationId(station.id ?? "")}
-                aria-pressed={station.id === activeStationId}
-                className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                  station.id === activeStationId ? "bg-amber-500 text-zinc-950" : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                }`}
+                aria-pressed={active}
+                className={cn(
+                  "flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+                  active
+                    ? "bg-accent-brand text-accent-brand-foreground shadow-xs"
+                    : "border border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
               >
-                <span aria-hidden="true">{station.icon}</span>
+                {station.id === "__all__" ? (
+                  <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  station.icon && <span aria-hidden="true">{station.icon}</span>
+                )}
                 {station.name}
                 {count > 0 && (
-                  <span className="rounded-full bg-black/20 px-2 py-0.5 text-xs font-bold">{count}</span>
+                  <Badge
+                    variant={active ? "secondary" : "amber"}
+                    className="rounded-full px-2 py-0 text-[11px] font-bold"
+                  >
+                    {count}
+                  </Badge>
                 )}
               </button>
             );
@@ -217,12 +249,12 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
       )}
 
       {error && (
-        <p role="alert" className="bg-red-950 px-4 py-2 text-sm text-red-300">
+        <p role="alert" className="border-b border-destructive/30 bg-destructive/15 px-4 py-2 text-sm text-destructive">
           {error} — reintentando automáticamente
         </p>
       )}
 
-      <div className="border-b border-zinc-800/60 px-4 py-2">
+      <div className="border-b border-border/60 px-4 py-2">
         <ConsolidatedBar entries={consolidated} />
       </div>
 
@@ -230,9 +262,12 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
         className={`grid flex-1 grid-cols-1 content-start gap-4 overflow-y-auto p-4 ${COLUMN_CLASSES[columns]}`}
         style={{ zoom: FONT_ZOOM[fontScale] }}
       >
-        {board === null && !error && <p className="animate-pulse text-sm text-zinc-500">Cargando tablero…</p>}
+        {board === null && !error && <p className="animate-pulse text-sm text-muted-foreground">Cargando tablero…</p>}
         {board !== null && visibleTickets.length === 0 && (
-          <p className="col-span-full py-16 text-center text-sm text-zinc-500">Sin comandas en esta estación 🎉</p>
+          <div className="col-span-full flex flex-col items-center justify-center gap-2 py-16 text-center text-sm text-muted-foreground">
+            <CheckCircle2 className="h-8 w-8 text-accent-brand/70" aria-hidden="true" />
+            <p>Sin comandas en esta estación</p>
+          </div>
         )}
         {visibleTickets.map((ticket) => (
           <TicketCard

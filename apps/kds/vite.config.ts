@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5175,
+    proxy: {
+      "/v1": {
+        target: "https://api.mobiware.app",
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     environment: "jsdom",

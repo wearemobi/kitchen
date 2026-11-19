@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FileText } from "lucide-react";
+import { Badge } from "@kitchen/common";
 import type { Ticket, TicketTransition } from "../../lib/api";
 import OrderTimer from "./OrderTimer";
 
@@ -30,12 +32,12 @@ export default function TicketCard({ ticket, onTransition, busy = false }: Ticke
   return (
     <article
       data-testid={`ticket-${ticket.id}`}
-      className="flex flex-col gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-lg"
+      className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm"
     >
       <header className="flex items-start justify-between gap-2">
         <div>
           <p className="text-xl font-black leading-none">{ticket.order_number}</p>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             {[ticket.channel, ticket.table_number, ticket.customer_name].filter(Boolean).join(" · ")}
           </p>
         </div>
@@ -48,24 +50,27 @@ export default function TicketCard({ ticket, onTransition, busy = false }: Ticke
         )}
       </header>
 
-      <p className="w-fit rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-300">
+      <Badge variant="secondary" className="w-fit text-[11px] font-semibold uppercase tracking-wide">
         {STATUS_LABELS[ticket.status ?? ""] ?? ticket.status}
-      </p>
+      </Badge>
 
       <ul className="flex flex-col gap-1.5">
         {(ticket.items ?? []).map((item, index) => (
           <li key={`${item.product_id ?? item.product_name}-${index}`} className="text-sm leading-snug">
-            <span className="mr-2 inline-block min-w-7 rounded bg-zinc-800 px-1.5 text-center font-bold text-amber-400">
+            <span className="mr-2 inline-block min-w-7 rounded bg-muted px-1.5 text-center font-bold text-accent-brand">
               {item.quantity != null ? item.quantity / 10000 : item.quantity}
             </span>
             <span className="font-medium">{item.product_name}</span>
-            {item.notes && <p className="ml-9 text-xs italic text-orange-300">{item.notes}</p>}
+            {item.notes && <p className="ml-9 text-xs italic text-amber-300">{item.notes}</p>}
           </li>
         ))}
       </ul>
 
       {ticket.notes && (
-        <p className="rounded-lg bg-zinc-800/70 px-3 py-2 text-xs text-zinc-300">📝 {ticket.notes}</p>
+        <p className="flex items-center gap-1.5 rounded-lg bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
+          <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{ticket.notes}</span>
+        </p>
       )}
 
       <footer className="mt-auto">
