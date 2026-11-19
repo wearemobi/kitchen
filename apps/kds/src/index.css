@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../../../packages/common/src/ui/tokens.css";
 @source "../../../packages/common/src";
 
 @keyframes pin-shake {
