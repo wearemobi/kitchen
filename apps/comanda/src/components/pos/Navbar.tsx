@@ -31,7 +31,6 @@ export default function Navbar({
     <SatelliteHeader
       title="MobiWare Comanda"
       tenantId={resolveTenantId()}
-      subtitle={`${operatorName} · ${table}`}
       icon={<UtensilsCrossed className="h-4 w-4" aria-hidden="true" />}
       metrics={[
         {
