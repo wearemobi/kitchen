@@ -2,11 +2,19 @@ import { useCartStore } from "../../store/cart.store";
 import { playAdd } from "../../lib/sounds";
 import type { Product } from "../../lib/api";
 
+const COLUMN_CLASSES: Record<2 | 3 | 4 | 6, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-2 sm:grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+  6: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6",
+};
+
 interface ProductGridProps {
   products: Product[];
+  columns?: 2 | 3 | 4 | 6;
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
+export default function ProductGrid({ products, columns = 3 }: ProductGridProps) {
   const addItem = useCartStore((s) => s.addItem);
 
   function money(value: number | undefined): string {
@@ -15,7 +23,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <ul className={`grid gap-3 ${COLUMN_CLASSES[columns]}`}>
       {products.map((product) => (
         <li key={product.sku}>
           <button

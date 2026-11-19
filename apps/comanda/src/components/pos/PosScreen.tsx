@@ -10,7 +10,7 @@ import {
 } from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
 import { playSuccess } from "../../lib/sounds";
-import Navbar, { type ComandaFontScale } from "./Navbar";
+import Navbar, { type ComandaColumnCount, type ComandaFontScale } from "./Navbar";
 import ProductGrid from "./ProductGrid";
 import Cart from "./Cart";
 import OpenOrdersDialog from "./OpenOrdersDialog";
@@ -25,7 +25,22 @@ export default function PosScreen() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [fontScale, setFontScale] = useState<ComandaFontScale>("base");
+  const [columns, setColumns] = useState<ComandaColumnCount>(() => {
+    const saved = Number(window.localStorage.getItem("ware-comanda.columns"));
+    return ([2, 3, 4, 6] as number[]).includes(saved) ? (saved as ComandaColumnCount) : 3;
+  });
+  const [fontScale, setFontScale] = useState<ComandaFontScale>(() => {
+    const saved = window.localStorage.getItem("ware-comanda.fontScale");
+    return saved === "sm" || saved === "lg" ? saved : "base";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("ware-comanda.columns", String(columns));
+  }, [columns]);
+
+  useEffect(() => {
+    window.localStorage.setItem("ware-comanda.fontScale", fontScale);
+  }, [fontScale]);
 
   const items = useCartStore((s) => s.items);
   const clear = useCartStore((s) => s.clear);
@@ -100,6 +115,8 @@ export default function PosScreen() {
         onOpenOrders={() => setOrdersOpen(true)}
         table={table}
         cartCount={items.length}
+        columns={columns}
+        onColumnsChange={setColumns}
         fontScale={fontScale}
         onFontScaleChange={setFontScale}
       />
@@ -113,7 +130,7 @@ export default function PosScreen() {
             {error}
           </p>
         )}
-        {!loading && !error && <ProductGrid products={filtered} />}
+        {!loading && !error && <ProductGrid products={filtered} columns={columns} />}
       </main>
 
       {items.length > 0 && (

@@ -3,6 +3,7 @@ import { Button, Input, SatelliteHeader, cn } from "@kitchen/common";
 import { resolveTenantId } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 
+export type ComandaColumnCount = 2 | 3 | 4 | 6;
 export type ComandaFontScale = "sm" | "base" | "lg";
 
 interface NavbarProps {
@@ -11,6 +12,8 @@ interface NavbarProps {
   onOpenOrders: () => void;
   table: string;
   cartCount?: number;
+  columns?: ComandaColumnCount;
+  onColumnsChange?: (columns: ComandaColumnCount) => void;
   fontScale?: ComandaFontScale;
   onFontScaleChange?: (scale: ComandaFontScale) => void;
 }
@@ -21,6 +24,8 @@ export default function Navbar({
   onOpenOrders,
   table,
   cartCount = 0,
+  columns = 3,
+  onColumnsChange,
   fontScale = "base",
   onFontScaleChange,
 }: NavbarProps) {
@@ -45,26 +50,48 @@ export default function Navbar({
       ]}
       operatorName={operatorName}
       controls={
-        onFontScaleChange ? (
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
-            {(["sm", "base", "lg"] as ComandaFontScale[]).map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => onFontScaleChange(size)}
-                aria-pressed={fontScale === size}
-                className={cn(
-                  "rounded-md px-2 py-1 font-bold transition-colors",
-                  fontScale === size
-                    ? "bg-accent-brand text-accent-brand-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {size === "sm" ? "A-" : size === "lg" ? "A+" : "A"}
-              </button>
-            ))}
-          </div>
-        ) : undefined
+        <>
+          {onColumnsChange && (
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+              {([2, 3, 4, 6] as ComandaColumnCount[]).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onColumnsChange(n)}
+                  aria-pressed={columns === n}
+                  className={cn(
+                    "rounded-md px-2 py-1 font-bold transition-colors",
+                    columns === n
+                      ? "bg-accent-brand text-accent-brand-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+          {onFontScaleChange && (
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+              {(["sm", "base", "lg"] as ComandaFontScale[]).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onFontScaleChange(size)}
+                  aria-pressed={fontScale === size}
+                  className={cn(
+                    "rounded-md px-2 py-1 font-bold transition-colors",
+                    fontScale === size
+                      ? "bg-accent-brand text-accent-brand-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {size === "sm" ? "A-" : size === "lg" ? "A+" : "A"}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       }
       actions={
         <Button variant="outline" size="xs" onClick={onOpenOrders} className="h-7">
