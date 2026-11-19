@@ -16,7 +16,8 @@ export function resolveTenantId(): string {
 }
 
 export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "https://api.mobiware.app";
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+  (import.meta.env.MODE === "development" ? "" : "https://api.mobiware.app");
 
 export const api = createApiClient({
   resolveTenantId,
