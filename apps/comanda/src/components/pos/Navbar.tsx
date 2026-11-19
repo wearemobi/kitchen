@@ -1,5 +1,5 @@
 import { ClipboardList, Search, UtensilsCrossed } from "lucide-react";
-import { Button, Input, SatelliteHeader, cn } from "@kitchen/common";
+import { Button, Input, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
 import { resolveTenantId } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 
@@ -16,6 +16,8 @@ interface NavbarProps {
   onColumnsChange?: (columns: ComandaColumnCount) => void;
   fontScale?: ComandaFontScale;
   onFontScaleChange?: (scale: ComandaFontScale) => void;
+  theme?: SatelliteTheme;
+  onToggleTheme?: () => void;
 }
 
 export default function Navbar({
@@ -28,6 +30,8 @@ export default function Navbar({
   onColumnsChange,
   fontScale = "base",
   onFontScaleChange,
+  theme,
+  onToggleTheme,
 }: NavbarProps) {
   const operatorName = useAuthStore((s) => s.operatorName) || "Mesero";
   const logout = useAuthStore((s) => s.logout);
@@ -45,7 +49,7 @@ export default function Navbar({
         {
           label: "Carrito",
           value: cartCount,
-          valueClassName: cartCount > 0 ? "text-emerald-400" : undefined,
+          valueClassName: cartCount > 0 ? "text-emerald-600 dark:text-emerald-400" : undefined,
         },
       ]}
       operatorName={operatorName}
@@ -99,6 +103,8 @@ export default function Navbar({
           <span>Órdenes</span>
         </Button>
       }
+      theme={theme}
+      onToggleTheme={onToggleTheme}
       onLogout={logout}
       bottomSlot={
         <div className="relative">
