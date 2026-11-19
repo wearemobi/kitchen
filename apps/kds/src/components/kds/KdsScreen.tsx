@@ -193,16 +193,16 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
         actions={
           completedCount > 0 ? (
             <Button
-              variant="outline"
+              variant={showCompleted ? "secondary" : "outline"}
               size="xs"
+              aria-pressed={showCompleted}
+              title={showCompleted ? "Ocultar órdenes completadas" : "Ver órdenes completadas"}
               onClick={() => setShowCompleted((v) => !v)}
               className="h-7 text-muted-foreground hover:text-foreground"
             >
               <History className="h-3.5 w-3.5" aria-hidden="true" />
               <span>
-                {showCompleted
-                  ? "Ocultar historial / Ocultar completadas"
-                  : `Historial (${completedCount}) / Ver completadas`}
+                {showCompleted ? "Ocultar" : `Historial (${completedCount})`}
               </span>
             </Button>
           ) : undefined
