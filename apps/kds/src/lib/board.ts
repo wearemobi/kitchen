@@ -43,7 +43,7 @@ export function consolidateItems(tickets: Ticket[]): ConsolidatedEntry[] {
     for (const item of ticket.items ?? []) {
       const name = (item as TicketItem & { product_name?: string }).product_name ?? "";
       if (!name) continue;
-      totals.set(name, (totals.get(name) ?? 0) + (item.quantity ?? 0));
+      totals.set(name, (totals.get(name) ?? 0) + ((item.quantity ?? 0) / 10000));
     }
   }
   return [...totals.entries()]

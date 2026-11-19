@@ -33,7 +33,7 @@ const boardWith = (ticketIds: string[]): BoardResponse =>
           channel: "DINE_IN",
           status: "PENDING",
           created_at: new Date().toISOString(),
-          items: [{ product_id: "p1", product_name: "Pupusa", quantity: 2 }],
+          items: [{ product_id: "p1", product_name: "Pupusa", quantity: 20000 }],
           available_transitions: [
             {
               id: "tr-1",
