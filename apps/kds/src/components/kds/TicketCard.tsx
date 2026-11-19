@@ -39,7 +39,13 @@ export default function TicketCard({ ticket, onTransition, busy = false }: Ticke
             {[ticket.channel, ticket.table_number, ticket.customer_name].filter(Boolean).join(" · ")}
           </p>
         </div>
-        {ticket.created_at && <OrderTimer createdAt={ticket.created_at} />}
+        {ticket.created_at && (
+          <OrderTimer
+            createdAt={ticket.created_at}
+            completedAt={(ticket as { completed_at?: string }).completed_at}
+            status={ticket.status}
+          />
+        )}
       </header>
 
       <p className="w-fit rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-300">
@@ -50,7 +56,7 @@ export default function TicketCard({ ticket, onTransition, busy = false }: Ticke
         {(ticket.items ?? []).map((item, index) => (
           <li key={`${item.product_id ?? item.product_name}-${index}`} className="text-sm leading-snug">
             <span className="mr-2 inline-block min-w-7 rounded bg-zinc-800 px-1.5 text-center font-bold text-amber-400">
-              {item.quantity}
+              {item.quantity != null ? item.quantity / 10000 : item.quantity}
             </span>
             <span className="font-medium">{item.product_name}</span>
             {item.notes && <p className="ml-9 text-xs italic text-orange-300">{item.notes}</p>}

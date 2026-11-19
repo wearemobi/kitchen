@@ -48,8 +48,8 @@ const ticket = (overrides: Partial<Ticket>): Ticket => ({
 describe("consolidateItems", () => {
   it("suma cantidades por producto y ordena desc", () => {
     const tickets = [
-      ticket({ items: [{ product_name: "Pupusa", quantity: 4 }, { product_name: "Hamburguesa", quantity: 2 }] }),
-      ticket({ items: [{ product_name: "Pupusa", quantity: 8 }, { product_name: "Refresco", quantity: 1 }] }),
+      ticket({ items: [{ product_name: "Pupusa", quantity: 40000 }, { product_name: "Hamburguesa", quantity: 20000 }] }),
+      ticket({ items: [{ product_name: "Pupusa", quantity: 80000 }, { product_name: "Refresco", quantity: 10000 }] }),
     ];
     expect(consolidateItems(tickets)).toEqual([
       { productName: "Pupusa", quantity: 12 },
@@ -60,16 +60,16 @@ describe("consolidateItems", () => {
 
   it("excluye tickets terminales (READY, COMPLETED, CANCELLED)", () => {
     const tickets = [
-      ticket({ status: "READY", items: [{ product_name: "Pupusa", quantity: 5 }] }),
-      ticket({ status: "COMPLETED", items: [{ product_name: "Taco", quantity: 9 }] }),
-      ticket({ status: "CANCELLED", items: [{ product_name: "Nachos", quantity: 3 }] }),
-      ticket({ status: "IN_PROGRESS", items: [{ product_name: "Baleada", quantity: 2 }] }),
+      ticket({ status: "READY", items: [{ product_name: "Pupusa", quantity: 50000 }] }),
+      ticket({ status: "COMPLETED", items: [{ product_name: "Taco", quantity: 90000 }] }),
+      ticket({ status: "CANCELLED", items: [{ product_name: "Nachos", quantity: 30000 }] }),
+      ticket({ status: "IN_PROGRESS", items: [{ product_name: "Baleada", quantity: 20000 }] }),
     ];
     expect(consolidateItems(tickets)).toEqual([{ productName: "Baleada", quantity: 2 }]);
   });
 
   it("ignora items sin nombre", () => {
-    expect(consolidateItems([ticket({ items: [{ quantity: 2 }, { product_name: "", quantity: 3 }] })])).toEqual([]);
+    expect(consolidateItems([ticket({ items: [{ quantity: 20000 }, { product_name: "", quantity: 30000 }] })])).toEqual([]);
   });
 });
 

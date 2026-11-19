@@ -43,6 +43,7 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
     const saved = window.localStorage.getItem("ware-kds.fontScale");
     return saved === "sm" || saved === "lg" ? saved : "base";
   });
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const refresh = useCallback(async () => {
     // kitchen#1: after a 401 the shared interceptor clears the session; never
@@ -101,6 +102,12 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
   const navStations: Station[] = stations.length > 0 ? [...stations, allStation] : stations;
   const activeStation = navStations.find((s) => s.id === activeStationId);
   const tickets = activeStation?.tickets ?? [];
+  const completedCount = tickets.filter(
+    (t) => t.status === "COMPLETED" || t.status === "CANCELLED",
+  ).length;
+  const visibleTickets = showCompleted
+    ? tickets
+    : tickets.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELLED");
 
   const consolidated = useMemo(() => consolidateItems(tickets), [tickets]);
 
@@ -163,6 +170,17 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
               </button>
             ))}
           </div>
+          {completedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowCompleted((v) => !v)}
+              className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-400 hover:bg-zinc-800"
+            >
+              {showCompleted
+                ? "Ocultar historial / Ocultar completadas"
+                : `Historial (${completedCount}) / Ver completadas`}
+            </button>
+          )}
           <button
             type="button"
             onClick={logout}
@@ -213,10 +231,10 @@ export default function KdsScreen({ pollIntervalMs = POLL_INTERVAL_MS }: KdsScre
         style={{ zoom: FONT_ZOOM[fontScale] }}
       >
         {board === null && !error && <p className="animate-pulse text-sm text-zinc-500">Cargando tablero…</p>}
-        {board !== null && tickets.length === 0 && (
+        {board !== null && visibleTickets.length === 0 && (
           <p className="col-span-full py-16 text-center text-sm text-zinc-500">Sin comandas en esta estación 🎉</p>
         )}
-        {tickets.map((ticket) => (
+        {visibleTickets.map((ticket) => (
           <TicketCard
             key={ticket.id}
             ticket={ticket}
