@@ -54,34 +54,92 @@ export async function fetchProducts(): Promise<Product[]> {
 
 const businessIdCache = new Map<string, string>();
 
-export async function resolveBusinessId(): Promise<string> {
+export interface Business {
+  id?: string;
+  tenant_id?: string;
+  name?: string;
+  display_prefix?: string;
+  status?: "ACTIVE" | "INACTIVE";
+}
+
+export const BUSINESS_STORAGE_PREFIX = "ware-kitchen.businessId.";
+
+export function urlBusinessId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return (new URLSearchParams(window.location.search).get("b") ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function storedBusinessId(tenantId = resolveTenantId()): string {
+  if (!tenantId) return "";
+  try {
+    return (window.localStorage.getItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`) ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function storeBusinessId(businessId: string, tenantId = resolveTenantId()): void {
+  if (!tenantId) return;
+  try {
+    if (businessId) {
+      window.localStorage.setItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`, businessId);
+    } else {
+      window.localStorage.removeItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`);
+    }
+  } catch {
+    // restricted storage: in-memory cache still applies
+  }
+}
+
+export async function fetchBusinesses(): Promise<Business[]> {
+  const tenantId = resolveTenantId();
+  const { data, error } = await (
+    api as unknown as {
+      GET: (
+        url: string,
+        opts: { params: { header: { "X-Tenant-Id": string } } },
+      ) => Promise<{ data?: Business[] | { items?: Business[] }; error?: unknown }>;
+    }
+  ).GET("/v1/orders/businesses", {
+    params: { header: { "X-Tenant-Id": tenantId } },
+  });
+  if (error) {
+    throw new Error("No se pudieron cargar los negocios del tenant.");
+  }
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+}
+
+/**
+ * Resolves the active business honouring `?b=<business_id>` (SPEC-KSAT3),
+ * then the per-tenant persisted selection, then the first business.
+ */
+export async function resolveBusinessId(preferredId?: string): Promise<string> {
   const envBusinessId = (import.meta.env.VITE_BUSINESS_ID as string | undefined)?.trim();
   if (envBusinessId) {
     return envBusinessId;
   }
 
   const tenantId = resolveTenantId();
-  const cached = businessIdCache.get(tenantId);
-  if (cached) {
-    return cached;
-  }
+  const preferred = (preferredId ?? urlBusinessId()).trim();
+  const businesses = await fetchBusinesses();
+  const chosen =
+    businesses.find((business) => business.id === preferred)?.id ??
+    businesses.find((business) => business.id === businessIdCache.get(tenantId))?.id ??
+    businesses.find((business) => business.id === storedBusinessId(tenantId))?.id ??
+    businesses[0]?.id;
 
-  const { data, error } = await (
-    api as unknown as {
-      GET: (
-        url: string,
-        opts: { params: { header: { "X-Tenant-Id": string } } },
-      ) => Promise<{ data?: Array<{ id?: string }>; error?: unknown }>;
-    }
-  ).GET("/v1/orders/businesses", {
-    params: { header: { "X-Tenant-Id": tenantId } },
-  });
-  if (error || !Array.isArray(data) || data.length === 0 || !data[0]?.id) {
+  if (!chosen) {
     throw new Error("No se encontró un negocio configurado para este tenant.");
   }
-
-  businessIdCache.set(tenantId, data[0].id);
-  return data[0].id;
+  businessIdCache.set(tenantId, chosen);
+  storeBusinessId(chosen, tenantId);
+  return chosen;
 }
 
 export async function createOrder(payload: {

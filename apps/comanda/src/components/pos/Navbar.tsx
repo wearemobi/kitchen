@@ -1,6 +1,6 @@
 import { ClipboardList, Search, UtensilsCrossed } from "lucide-react";
-import { Button, Input, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
-import { resolveTenantId } from "../../lib/api";
+import { Button, Badge, Input, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
+import { resolveTenantId, type Business } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 
 export type ComandaColumnCount = 2 | 3 | 4 | 6;
@@ -18,6 +18,9 @@ interface NavbarProps {
   onFontScaleChange?: (scale: ComandaFontScale) => void;
   theme?: SatelliteTheme;
   onToggleTheme?: () => void;
+  businesses?: Business[];
+  activeBusinessId?: string;
+  onBusinessChange?: (businessId: string) => void;
 }
 
 export default function Navbar({
@@ -32,6 +35,9 @@ export default function Navbar({
   onFontScaleChange,
   theme,
   onToggleTheme,
+  businesses = [],
+  activeBusinessId = "",
+  onBusinessChange = () => {},
 }: NavbarProps) {
   const operatorName = useAuthStore((s) => s.operatorName) || "Mesero";
   const logout = useAuthStore((s) => s.logout);
@@ -55,6 +61,24 @@ export default function Navbar({
       operatorName={operatorName}
       controls={
         <>
+          {businesses.length > 1 ? (
+            <select
+              aria-label="Negocio activo"
+              value={activeBusinessId}
+              onChange={(event) => onBusinessChange(event.target.value)}
+              className="h-7 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground"
+            >
+              {businesses.map((business) => (
+                <option key={business.id} value={business.id}>
+                  {business.name}
+                </option>
+              ))}
+            </select>
+          ) : businesses.length === 1 ? (
+            <Badge variant="outline" className="text-[10px]">
+              {businesses[0]?.name}
+            </Badge>
+          ) : null}
           {onColumnsChange && (
             <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
               {([2, 3, 4, 6] as ComandaColumnCount[]).map((n) => (

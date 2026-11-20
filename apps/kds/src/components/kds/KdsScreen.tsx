@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChefHat, History, LayoutGrid } from "lucide-react";
 import { Badge, Button, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
-import { fetchBoard, fireTransition, resolveTenantId, type BoardResponse, type Station, type Ticket, type TicketTransition } from "../../lib/api";
+import { fetchBoard, fetchBusinesses, fireTransition, resolveTenantId, storeBusinessId, storedBusinessId, urlBusinessId, type BoardResponse, type Business, type Station, type Ticket, type TicketTransition } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
 import { consolidateItems, detectNewTicketIds } from "../../lib/board";
 import { playNewTicketChime, playTransitionSound } from "../../lib/sounds";
@@ -52,13 +52,46 @@ export default function KdsScreen({
     return saved === "sm" || saved === "lg" ? saved : "base";
   });
   const [showCompleted, setShowCompleted] = useState(false);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businessId, setBusinessId] = useState(urlBusinessId);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchBusinesses()
+      .then((list) => {
+        if (cancelled) return;
+        setBusinesses(list);
+        const chosen =
+          list.find((business) => business.id === businessId)?.id ??
+          list.find((business) => business.id === storedBusinessId())?.id ??
+          list[0]?.id ??
+          "";
+        if (chosen) {
+          setBusinessId(chosen);
+          storeBusinessId(chosen);
+        }
+      })
+      .catch(() => {
+        // The board stays on its error/retry path if the list cannot load.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleBusinessChange(nextBusinessId: string) {
+    setBusinessId(nextBusinessId);
+    storeBusinessId(nextBusinessId);
+  }
 
   const refresh = useCallback(async () => {
     // kitchen#1: after a 401 the shared interceptor clears the session; never
     // fire another polling request with the dead token.
     if (!useAuthStore.getState().token) return;
+    if (!businessId) return;
     try {
-      const next = await fetchBoard();
+      const next = await fetchBoard(businessId);
       const stations = next.stations ?? [];
       const fresh = detectNewTicketIds(seenTicketIds.current, stations);
       for (const station of stations) {
@@ -82,7 +115,7 @@ export default function KdsScreen({
       if (!useAuthStore.getState().token) return;
       setError(err instanceof Error ? err.message : "Error de conexión con wared.");
     }
-  }, []);
+  }, [businessId]);
 
   useEffect(() => {
     if (!token) return;
@@ -158,6 +191,24 @@ export default function KdsScreen({
         operatorName={operatorName}
         controls={
           <>
+            {businesses.length > 1 ? (
+              <select
+                aria-label="Negocio activo"
+                value={businessId}
+                onChange={(event) => handleBusinessChange(event.target.value)}
+                className="h-7 rounded-lg border border-border bg-background px-2 text-xs font-medium text-foreground"
+              >
+                {businesses.map((business) => (
+                  <option key={business.id} value={business.id}>
+                    {business.name}
+                  </option>
+                ))}
+              </select>
+            ) : businesses.length === 1 ? (
+              <Badge variant="outline" className="text-[10px]">
+                {businesses[0]?.name}
+              </Badge>
+            ) : null}
             <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
               {([2, 3, 4, 6] as ColumnCount[]).map((n) => (
                 <button

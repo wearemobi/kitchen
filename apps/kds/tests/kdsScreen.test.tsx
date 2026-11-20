@@ -4,8 +4,12 @@ import type { BoardResponse } from "../src/lib/api";
 
 vi.mock("../src/lib/api", () => ({
   fetchBoard: vi.fn(),
+  fetchBusinesses: vi.fn(),
   fireTransition: vi.fn(),
   resolveTenantId: vi.fn(() => "tenant_demo_sv"),
+  storeBusinessId: vi.fn(),
+  storedBusinessId: vi.fn(() => ""),
+  urlBusinessId: vi.fn(() => ""),
 }));
 
 vi.mock("../src/lib/sounds", () => ({
@@ -14,7 +18,7 @@ vi.mock("../src/lib/sounds", () => ({
   playKeypadClick: vi.fn(),
 }));
 
-import { fetchBoard, fireTransition } from "../src/lib/api";
+import { fetchBoard, fetchBusinesses, fireTransition, urlBusinessId } from "../src/lib/api";
 import { playNewTicketChime, playTransitionSound } from "../src/lib/sounds";
 import KdsScreen from "../src/components/kds/KdsScreen";
 import { useAuthStore } from "../src/store/auth";
@@ -53,6 +57,10 @@ const boardWith = (ticketIds: string[]): BoardResponse =>
 beforeEach(() => {
   cleanup();
   vi.mocked(fetchBoard).mockReset();
+  vi.mocked(fetchBusinesses).mockReset().mockResolvedValue([
+    { id: "b1", name: "Restaurante" },
+  ] as never);
+  vi.mocked(urlBusinessId).mockReturnValue("");
   vi.mocked(fireTransition).mockReset();
   vi.mocked(playNewTicketChime).mockReset();
   vi.mocked(playTransitionSound).mockReset();
@@ -67,6 +75,21 @@ beforeEach(() => {
 });
 
 describe("KdsScreen", () => {
+  it("filtra el tablero por el business_id de ?b=", async () => {
+    vi.mocked(urlBusinessId).mockReturnValue("b2");
+    vi.mocked(fetchBusinesses).mockResolvedValue([
+      { id: "b1", name: "Restaurante" },
+      { id: "b2", name: "Taquería" },
+    ] as never);
+    vi.mocked(fetchBoard).mockResolvedValue(boardWith(["104"]));
+
+    render(<KdsScreen />);
+
+    expect(await screen.findByText("#104")).toBeInTheDocument();
+    expect(fetchBoard).toHaveBeenCalledWith("b2");
+    expect(screen.getByRole("combobox", { name: "Negocio activo" })).toHaveValue("b2");
+  });
+
   it("renderiza estaciones, tickets y stats, y dispara transiciones", async () => {
     vi.mocked(fetchBoard).mockResolvedValue(boardWith(["104"]));
     render(<KdsScreen />);
