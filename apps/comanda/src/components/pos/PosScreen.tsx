@@ -2,10 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { Button, type SatelliteTheme } from "@kitchen/common";
 import {
+  fetchBusinesses,
   fetchProducts,
   createOrder,
   dispatchOrderToKitchen,
   resolveBusinessId,
+  storeBusinessId,
+  storedBusinessId,
+  urlBusinessId,
+  type Business,
   type Product,
 } from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
@@ -30,6 +35,8 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [activeBusinessId, setActiveBusinessId] = useState(urlBusinessId);
   const [columns, setColumns] = useState<ComandaColumnCount>(() => {
     const saved = Number(window.localStorage.getItem("ware-comanda.columns"));
     return ([2, 3, 4, 6] as number[]).includes(saved) ? (saved as ComandaColumnCount) : 3;
@@ -71,6 +78,36 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchBusinesses()
+      .then((list) => {
+        if (cancelled) return;
+        setBusinesses(list);
+        const chosen =
+          list.find((business) => business.id === activeBusinessId)?.id ??
+          list.find((business) => business.id === storedBusinessId())?.id ??
+          list[0]?.id ??
+          "";
+        if (chosen) {
+          setActiveBusinessId(chosen);
+          storeBusinessId(chosen);
+        }
+      })
+      .catch(() => {
+        // Comanda stays usable with the cart even if the list fails.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleBusinessChange(businessId: string) {
+    setActiveBusinessId(businessId);
+    storeBusinessId(businessId);
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return products;
@@ -82,7 +119,7 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
     setSending(true);
     setSendError("");
     try {
-      const businessId = await resolveBusinessId();
+      const businessId = activeBusinessId || (await resolveBusinessId());
       const order = await createOrder({
         business_id: businessId,
         request_id: crypto.randomUUID(),
@@ -126,6 +163,9 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
         onFontScaleChange={setFontScale}
         theme={theme}
         onToggleTheme={onToggleTheme}
+        businesses={businesses}
+        activeBusinessId={activeBusinessId}
+        onBusinessChange={handleBusinessChange}
       />
       <main
         className="flex-1 overflow-y-auto p-3"

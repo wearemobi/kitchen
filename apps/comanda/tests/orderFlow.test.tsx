@@ -35,4 +35,21 @@ describe("Cart total & business_id resolution", () => {
     expect(id).toBe("ebe05526-d0bb-4291-b303-9cfed9680964");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("prefers ?b=<business_id> over the first business (SPEC-KSAT3)", async () => {
+    window.history.pushState({}, "", "/?b=b2");
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          { id: "b1", name: "Restaurante" },
+          { id: "b2", name: "Taquería" },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const id = await resolveBusinessId();
+    expect(id).toBe("b2");
+    window.history.pushState({}, "", "/");
+  });
 });

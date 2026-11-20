@@ -15,6 +15,82 @@ export function resolveTenantId(): string {
   return commonResolveTenantId(TENANT_STORAGE_KEY);
 }
 
+export interface Business {
+  id?: string;
+  tenant_id?: string;
+  name?: string;
+  display_prefix?: string;
+  status?: "ACTIVE" | "INACTIVE";
+}
+
+export const BUSINESS_STORAGE_PREFIX = "ware-kitchen.businessId.";
+
+export function urlBusinessId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return (new URLSearchParams(window.location.search).get("b") ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function storedBusinessId(tenantId = resolveTenantId()): string {
+  if (!tenantId) return "";
+  try {
+    return (window.localStorage.getItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`) ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+export function storeBusinessId(businessId: string, tenantId = resolveTenantId()): void {
+  if (!tenantId) return;
+  try {
+    if (businessId) {
+      window.localStorage.setItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`, businessId);
+    } else {
+      window.localStorage.removeItem(`${BUSINESS_STORAGE_PREFIX}${tenantId}`);
+    }
+  } catch {
+    // restricted storage: selection remains in component state
+  }
+}
+
+export async function fetchBusinesses(): Promise<Business[]> {
+  const { data, error } = await (
+    api as unknown as {
+      GET: (
+        url: string,
+        opts: { params: { header: { "X-Tenant-Id": string } } },
+      ) => Promise<{ data?: Business[] | { items?: Business[] }; error?: unknown }>;
+    }
+  ).GET("/v1/orders/businesses", {
+    params: { header: { "X-Tenant-Id": resolveTenantId() } },
+  });
+  if (error) {
+    throw new Error("No se pudieron cargar los negocios del tenant.");
+  }
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+}
+
+/** `?b=` wins, then the persisted selection, then the first business. */
+export async function resolveBusinessId(preferredId?: string): Promise<string> {
+  const tenantId = resolveTenantId();
+  const preferred = (preferredId ?? urlBusinessId()).trim();
+  const businesses = await fetchBusinesses();
+  const chosen =
+    businesses.find((business) => business.id === preferred)?.id ??
+    businesses.find((business) => business.id === storedBusinessId(tenantId))?.id ??
+    businesses[0]?.id;
+  if (!chosen) {
+    throw new Error("No se encontró un negocio configurado para este tenant.");
+  }
+  storeBusinessId(chosen, tenantId);
+  return chosen;
+}
+
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
   (import.meta.env.MODE === "development" ? "" : "https://api.mobiware.app");
@@ -47,9 +123,13 @@ export async function loginWithPin(username: string, pin: string): Promise<PinLo
   return commonLoginWithPin(api, resolveTenantId(), username, pin);
 }
 
-export async function fetchBoard(): Promise<BoardResponse> {
+export async function fetchBoard(businessId?: string | null): Promise<BoardResponse> {
+  const business = (businessId ?? "").trim();
   const { data, error } = await api.GET("/v1/kitchen/board", {
-    params: { header: { "X-Tenant-Id": resolveTenantId() } },
+    params: {
+      header: { "X-Tenant-Id": resolveTenantId() },
+      query: business ? { business_id: business } : {},
+    },
   });
   if (error || !data) {
     throw new Error("No fue posible cargar el tablero de cocina.");
