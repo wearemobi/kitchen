@@ -5,7 +5,7 @@ export function resolveTenantId(storageKey = "kitchen.tenant"): string {
     return DEFAULT_TENANT_ID;
   }
   const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get("t") ?? params.get("tenant");
+  const fromQuery = params.get("t") ?? params.get("tenant") ?? params.get("tenant_id");
   if (fromQuery && fromQuery.trim() !== "") {
     const clean = fromQuery.trim();
     localStorage.setItem(storageKey, clean);
