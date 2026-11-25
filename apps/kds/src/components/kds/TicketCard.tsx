@@ -2,7 +2,8 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Badge } from "@kitchen/common";
 import type { Ticket, TicketTransition } from "../../lib/api";
-import OrderTimer from "./OrderTimer";
+import ProcessTimer from "./ProcessTimer";
+import StationTimer from "./StationTimer";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -42,8 +43,15 @@ export default function TicketCard({ ticket, onTransition, busy = false }: Ticke
           </p>
         </div>
         {ticket.created_at && (
-          <OrderTimer
+          <ProcessTimer
             createdAt={ticket.created_at}
+            completedAt={(ticket as { completed_at?: string }).completed_at}
+            status={ticket.status}
+          />
+        )}
+        {(ticket as { started_at?: string }).started_at && (
+          <StationTimer
+            startedAt={(ticket as { started_at?: string }).started_at}
             completedAt={(ticket as { completed_at?: string }).completed_at}
             status={ticket.status}
           />
