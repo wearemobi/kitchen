@@ -4,6 +4,11 @@ import {
   detectNewTicketIds,
   formatElapsed,
   isActiveTicket,
+  oldestActiveStationStart,
+  processElapsedMinutes,
+  processTimerLevel,
+  stationElapsedMinutes,
+  stationTimerLevel,
   minutesElapsed,
   timerLevel,
 } from "../src/lib/board";
@@ -88,5 +93,30 @@ describe("detectNewTicketIds", () => {
     const seen = new Set(["a"]);
     const stations = [{ tickets: [ticket({ id: "a" }), ticket({ id: "b" })] }, { tickets: [ticket({ id: "c" })] }];
     expect(detectNewTicketIds(seen, stations)).toEqual(["b", "c"]);
+  });
+});
+
+describe("SPEC-WKDS2 timers", () => {
+  it("calcula minutos y nivel por estación", () => {
+    const now = NOW;
+    const isoStarted = iso(10);
+    expect(stationElapsedMinutes(isoStarted, now)).toBeCloseTo(10, 5);
+    expect(stationTimerLevel(isoStarted, now)).toBe("green");
+    expect(stationTimerLevel(iso(20), now)).toBe("amber");
+    expect(stationTimerLevel(iso(30), now)).toBe("red");
+  });
+
+  it("calcula minutos y nivel del proceso total", () => {
+    const now = NOW;
+    expect(processElapsedMinutes(iso(5), now)).toBeCloseTo(5, 5);
+    expect(processTimerLevel(iso(5), now)).toBe("green");
+  });
+
+  it("obtiene el inicio más antiguo de la estación", () => {
+    const tickets = [
+      ticket({ created_at: iso(2), started_at: iso(2) } as never),
+      ticket({ created_at: iso(8), started_at: iso(8) } as never),
+    ];
+    expect(oldestActiveStationStart(tickets)).toBe(iso(8));
   });
 });

@@ -3,9 +3,10 @@ import { CheckCircle2, ChefHat, History, LayoutGrid } from "lucide-react";
 import { Badge, Button, SatelliteHeader, cn, type SatelliteTheme } from "@kitchen/common";
 import { fetchBoard, fetchBusinesses, fireTransition, resolveTenantId, storeBusinessId, storedBusinessId, urlBusinessId, type BoardResponse, type Business, type Station, type Ticket, type TicketTransition } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
-import { consolidateItems, detectNewTicketIds } from "../../lib/board";
+import { consolidateItems, detectNewTicketIds, stationStartTime } from "../../lib/board";
 import { playNewTicketChime, playTransitionSound } from "../../lib/sounds";
 import TicketCard from "./TicketCard";
+import StationTimer from "./StationTimer";
 import ConsolidatedBar from "./ConsolidatedBar";
 
 const POLL_INTERVAL_MS = 5000;
@@ -293,6 +294,9 @@ export default function KdsScreen({
                   station.icon && <span aria-hidden="true">{station.icon}</span>
                 )}
                 {station.name}
+                {stationStartTime(station) && (
+                  <StationTimer startedAt={stationStartTime(station)} />
+                )}
                 {count > 0 && (
                   <Badge
                     variant={active ? "secondary" : "amber"}
