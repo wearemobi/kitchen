@@ -3,7 +3,8 @@ import { ShoppingBag } from "lucide-react";
 import { Button, type SatelliteTheme } from "@kitchen/common";
 import {
   fetchBusinesses,
-  fetchProducts,
+  fetchKitchenMenuItems,
+  fetchKitchenMenus,
   createOrder,
   dispatchOrderToKitchen,
   resolveBusinessId,
@@ -11,7 +12,8 @@ import {
   storedBusinessId,
   urlBusinessId,
   type Business,
-  type Product,
+  type KitchenMenu,
+  type KitchenMenuItem,
 } from "../../lib/api";
 import { useCartStore } from "../../store/cart.store";
 import { playSuccess } from "../../lib/sounds";
@@ -26,7 +28,10 @@ interface PosScreenProps {
 }
 
 export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {}) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [menuItems, setMenuItems] = useState<KitchenMenuItem[]>([]);
+  const [menus, setMenus] = useState<KitchenMenu[]>([]);
+  const [selectedMenuId, setSelectedMenuId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -62,21 +67,35 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    fetchProducts()
-      .then((list) => {
-        if (!cancelled) setProducts(list.filter((p) => p.is_active !== false));
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
-      })
-      .finally(() => {
+    async function loadMenu() {
+      setLoading(true);
+      setError("");
+      try {
+        const businessId = activeBusinessId || (await resolveBusinessId());
+        const [items, availableMenus] = await Promise.all([
+          fetchKitchenMenuItems(businessId, {
+            activeNow: true,
+            menuId: selectedMenuId || undefined,
+          }),
+          fetchKitchenMenus(businessId),
+        ]);
+        if (!cancelled) {
+          setMenuItems(items);
+          setMenus(availableMenus);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "No fue posible cargar el menú de cocina.");
+        }
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+    void loadMenu();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeBusinessId, selectedMenuId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,14 +124,31 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
 
   function handleBusinessChange(businessId: string) {
     setActiveBusinessId(businessId);
+    setSelectedMenuId("");
+    setSelectedCategoryId("");
     storeBusinessId(businessId);
   }
 
+  const categories = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const item of menuItems) {
+      if (item.category_id) {
+        byId.set(item.category_id, item.category_name ?? "Sin categoría");
+      }
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name, "es"),
+    );
+  }, [menuItems]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q));
-  }, [products, search]);
+    return menuItems.filter((item) => {
+      if (selectedCategoryId && item.category_id !== selectedCategoryId) return false;
+      if (!q) return true;
+      return item.name?.toLowerCase().includes(q) || item.sku?.toLowerCase().includes(q);
+    });
+  }, [menuItems, search, selectedCategoryId]);
 
   async function handleSend() {
     if (items.length === 0 || sending) return;
@@ -167,11 +203,58 @@ export default function PosScreen({ theme, onToggleTheme }: PosScreenProps = {})
         activeBusinessId={activeBusinessId}
         onBusinessChange={handleBusinessChange}
       />
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+        <select
+          aria-label="Menú"
+          value={selectedMenuId}
+          onChange={(event) => {
+            setSelectedMenuId(event.target.value);
+            setSelectedCategoryId("");
+          }}
+          className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
+        >
+          <option value="">Todos los menús</option>
+          {menus
+            .filter((menu) => menu.status !== "INACTIVE")
+            .map((menu) => (
+              <option key={menu.id ?? menu.name} value={menu.id ?? ""}>
+                {menu.name}
+              </option>
+            ))}
+        </select>
+        <button
+          type="button"
+          aria-pressed={!selectedCategoryId}
+          onClick={() => setSelectedCategoryId("")}
+          className={`rounded-full border px-3 py-1.5 text-xs ${
+            !selectedCategoryId
+              ? "border-accent-brand bg-accent-brand/10 text-accent-brand"
+              : "border-border text-muted-foreground"
+          }`}
+        >
+          Todas
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            type="button"
+            aria-pressed={selectedCategoryId === category.id}
+            onClick={() => setSelectedCategoryId(category.id)}
+            className={`rounded-full border px-3 py-1.5 text-xs ${
+              selectedCategoryId === category.id
+                ? "border-accent-brand bg-accent-brand/10 text-accent-brand"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
       <main
         className="flex-1 overflow-y-auto p-3"
         style={{ zoom: fontScale === "sm" ? 0.9 : fontScale === "lg" ? 1.12 : 1 }}
       >
-        {loading && <p className="animate-pulse text-sm text-muted-foreground">Cargando catálogo…</p>}
+        {loading && <p className="animate-pulse text-sm text-muted-foreground">Cargando menú…</p>}
         {error && (
           <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/15 px-4 py-2 text-sm text-destructive">
             {error}

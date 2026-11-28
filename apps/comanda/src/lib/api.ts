@@ -28,11 +28,62 @@ export const api = createApiClient({
 
 export type { Cashier, PinLoginResponse };
 
-export type Product = NonNullable<
-  paths["/v1/inventory/products"]["get"]["responses"]["200"]["content"]["application/json"]["items"]
->[number];
+export interface KitchenMenu {
+  id?: string;
+  business_id?: string;
+  name?: string;
+  description?: string;
+  emoji?: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+  sort_order?: number;
+}
+
+export interface KitchenMenuItem {
+  id?: string;
+  business_id?: string;
+  sku?: string;
+  name?: string;
+  description?: string;
+  category_id?: string | null;
+  category_name?: string | null;
+  emoji?: string;
+  image_file_id?: string | null;
+  prep_time_minutes?: number;
+  effective_price?: number;
+  effective_price_usd?: number;
+  status?: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
+  sort_order?: number;
+  station_name?: string | null;
+  menu_ids?: string[];
+}
 
 export type Order = paths["/v1/orders"]["post"]["responses"]["201"]["content"]["application/json"];
+
+type LooseGetClient = {
+  GET: (
+    url: string,
+    options: {
+      params: {
+        header: { "X-Tenant-Id": string };
+        query: Record<string, string | number | boolean | undefined>;
+      };
+    },
+  ) => Promise<{ data?: unknown; error?: unknown }>;
+};
+
+const looseGetApi = api as unknown as LooseGetClient;
+const vaultImageCache = new Map<string, string>();
+
+function normalizeList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === "object") {
+    const items = (data as { items?: unknown }).items;
+    if (Array.isArray(items)) return items as T[];
+  }
+  return [];
+}
 
 export async function fetchCashiers(): Promise<Cashier[]> {
   return commonFetchCashiers(api, resolveTenantId());
@@ -42,14 +93,61 @@ export async function loginWithPin(username: string, pin: string): Promise<PinLo
   return commonLoginWithPin(api, resolveTenantId(), username, pin);
 }
 
-export async function fetchProducts(): Promise<Product[]> {
-  const { data, error } = await api.GET("/v1/inventory/products", {
-    params: { header: { "X-Tenant-Id": resolveTenantId() }, query: { size: 200, sort: "name,asc" } },
+export interface FetchKitchenMenuItemsOptions {
+  activeNow?: boolean;
+  menuId?: string;
+  categoryId?: string;
+  search?: string;
+}
+
+export async function fetchKitchenMenuItems(
+  businessId: string,
+  options: FetchKitchenMenuItemsOptions = {},
+): Promise<KitchenMenuItem[]> {
+  const query: Record<string, string | number | boolean | undefined> = {
+    business_id: businessId,
+    active_now: options.activeNow ?? true,
+  };
+  if (options.menuId) query.menu_id = options.menuId;
+  if (options.categoryId) query.category_id = options.categoryId;
+  if (options.search) query.search = options.search;
+
+  const { data, error } = await looseGetApi.GET("/v1/kitchen/menu-items", {
+    params: { header: { "X-Tenant-Id": resolveTenantId() }, query },
   });
   if (error || !data) {
-    throw new Error("No fue posible cargar el catálogo de productos.");
+    throw new Error("No fue posible cargar el menú de cocina.");
   }
-  return data.items ?? [];
+  return normalizeList<KitchenMenuItem>(data);
+}
+
+export async function fetchKitchenMenus(businessId: string): Promise<KitchenMenu[]> {
+  const { data, error } = await looseGetApi.GET("/v1/kitchen/menus", {
+    params: {
+      header: { "X-Tenant-Id": resolveTenantId() },
+      query: { business_id: businessId },
+    },
+  });
+  if (error || !data) {
+    throw new Error("No fue posible cargar los menús de cocina.");
+  }
+  return normalizeList<KitchenMenu>(data);
+}
+
+export async function fetchVaultDownloadUrl(fileId: string): Promise<string> {
+  const cached = vaultImageCache.get(fileId);
+  if (cached) return cached;
+
+  const { data, error } = await looseGetApi.GET(`/v1/vault/files/${encodeURIComponent(fileId)}`, {
+    params: { header: { "X-Tenant-Id": resolveTenantId() }, query: {} },
+  });
+  const downloadUrl =
+    data && typeof data === "object" ? (data as { download_url?: unknown }).download_url : undefined;
+  if (error || typeof downloadUrl !== "string" || !downloadUrl) {
+    throw new Error("No fue posible cargar la foto del platillo.");
+  }
+  vaultImageCache.set(fileId, downloadUrl);
+  return downloadUrl;
 }
 
 const businessIdCache = new Map<string, string>();

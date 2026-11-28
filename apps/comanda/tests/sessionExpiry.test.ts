@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchProducts, loginWithPin } from "../src/lib/api";
+import { fetchKitchenMenuItems, loginWithPin } from "../src/lib/api";
 import { useAuthStore } from "../src/store/auth";
 
 function unauthorizedResponse() {
@@ -38,7 +38,9 @@ describe("Comanda session expiry wiring (kitchen#1)", () => {
     loginExpiredSession();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(unauthorizedResponse()));
 
-    await expect(fetchProducts()).rejects.toThrow("No fue posible cargar el catálogo de productos.");
+    await expect(fetchKitchenMenuItems("business-1")).rejects.toThrow(
+      "No fue posible cargar el menú de cocina.",
+    );
     expect(useAuthStore.getState().token).toBe("");
     expect(useAuthStore.getState().operatorId).toBe("");
   });
